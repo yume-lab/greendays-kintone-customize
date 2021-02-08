@@ -1,0 +1,41 @@
+{
+  "name": "greendays-users-customize-view",
+  "version": "1.0.0",
+  "main": "main.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --progress --config webpack.prod.js",
+    "watch": "webpack --progress --watch --config webpack.dev.js",
+    "eslint": "eslint --fix ./src/**/*.js ./src/**/*.vue"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.9.6",
+    "@babel/preset-env": "^7.9.6",
+    "@mdi/font": "^5.3.45",
+    "babel-loader": "^8.1.0",
+    "css-loader": "^3.5.3",
+    "eslint": "^7.0.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-vue": "^2.0.2",
+    "eslint-plugin-vue": "^6.2.2",
+    "exports-loader": "^0.7.0",
+    "html-loader": "^1.1.0",
+    "sass": "^1.26.8",
+    "sass-loader": "^8.0.2",
+    "style-loader": "^1.2.1",
+    "url-loader": "^4.1.0",
+    "vue-loader": "^15.9.2",
+    "vue-template-compiler": "^2.6.11",
+    "vuetify-loader": "^1.4.4",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-merge": "^5.0.9"
+  },
+  "dependencies": {
+    "babel-polyfill": "^6.26.0",
+    "kintone-utility": "https://github.com/kintone/kintoneUtility.git",
+    "vue": "^2.6.11",
+    "vuetify": "^2.2.32"
+  }
+}
