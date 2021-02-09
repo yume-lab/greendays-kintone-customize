@@ -9,10 +9,21 @@
                 <v-col cols="12" md="2">
                   <v-select
                     clearable
-                    v-model="search.industry"
-                    label="業種"
-                    :items="industries"
-                    :menu-props="{ top: true, offsetY: true }"
+                    v-model="search.category"
+                    label="カテゴリーから探す"
+                    :items="categories"
+                    multiple
+                    @change="filterByConditions"
+                  >
+                  </v-select>
+                </v-col>
+
+                <v-col cols="12" md="2">
+                  <v-select
+                    clearable
+                    v-model="search.broadCategory"
+                    label="大分類キーワード"
+                    :items="broadCategories"
                     multiple
                     @change="filterByConditions"
                   >
@@ -22,10 +33,10 @@
                 <v-col cols="12" md="2">
                   <v-text-field
                     clearable
-                    label="クライアント名"
+                    label="中分類キーワード"
                     name="title"
                     maxlength="64"
-                    v-model="search.clientName"
+                    v-model="search.mediumCategory"
                     @click:clear="filterByConditions"
                     @keydown.enter="filterByConditions"
                   ></v-text-field>
@@ -34,10 +45,10 @@
                 <v-col cols="12" md="2">
                   <v-text-field
                     clearable
-                    label="商材名"
+                    label="小分類キーワード"
                     name="title"
                     maxlength="64"
-                    v-model="search.commodity"
+                    v-model="search.subCategory"
                     @click:clear="filterByConditions"
                     @keydown.enter="filterByConditions"
                   ></v-text-field>
@@ -70,12 +81,22 @@
               loading-text="読込中"
               no-data-text="データがありません。"
             >
-              <template v-slot:item.レコード番号.value="{ item }">
+              <template v-slot:[`item.レコード番号.value`]="{ item }">
                 <a
                   :href="`https://salescomms.cybozu.com/k/${appId}/show#record=${item.レコード番号.value}`"
                   target="_blank"
                 >
                   {{ item.レコード番号.value }}
+                </a>
+              </template>
+              <template v-slot:[`item.参考リンク_1.value`]="{ item }">
+                <a :href="item.参考リンク_1.value" target="_blank">
+                  {{ item.参考リンク_1.value.slice(0, 20) }}
+                </a>
+              </template>
+              <template v-slot:[`item.参考リンク_2.value`]="{ item }">
+                <a :href="item.参考リンク_2.value" target="_blank">
+                  {{ item.参考リンク_2.value.slice(0, 20) }}
                 </a>
               </template>
             </v-data-table>
@@ -96,9 +117,10 @@ export default {
     loading: true,
     search: {
       text: "",
-      industry: "",
-      clientName: "",
-      commodity: "",
+      category: "",
+      broadCategory: "",
+      mediumCategory: "",
+      subCategory: "",
     },
     headers: [
       {
@@ -109,24 +131,59 @@ export default {
         width: "10px",
       },
       {
-        text: "業種",
+        text: "カテゴリーから探す",
         align: "left",
         sortable: true,
-        value: "業種.value",
+        value: "カテゴリーから探す.value",
         width: "150px",
       },
       {
-        text: "クライアント名",
+        text: "大分類キーワード",
         align: "left",
         sortable: true,
-        value: "クライアント名.value",
+        value: "大分類キーワード.value",
         width: "150px",
       },
       {
-        text: "商材名",
+        text: "中分類キーワード",
         align: "left",
         sortable: true,
-        value: "商材名.value",
+        value: "中分類キーワード.value",
+        width: "150px",
+      },
+      {
+        text: "小分類キーワード",
+        align: "left",
+        sortable: true,
+        value: "小分類キーワード.value",
+        width: "150px",
+      },
+      {
+        text: "タイトル",
+        align: "left",
+        sortable: true,
+        value: "タイトル.value",
+        width: "150px",
+      },
+      {
+        text: "本文",
+        align: "left",
+        sortable: true,
+        value: "本文.value",
+        width: "150px",
+      },
+      {
+        text: "参考リンク①",
+        align: "left",
+        sortable: true,
+        value: "参考リンク_1.value",
+        width: "150px",
+      },
+      {
+        text: "参考リンク②",
+        align: "left",
+        sortable: true,
+        value: "参考リンク_2.value",
         width: "150px",
       },
     ],
@@ -138,14 +195,28 @@ export default {
       sortBy: ["レコード番号.value"],
       sortDesc: [true],
     },
-    industries: [],
+    categories: [],
+    broadCategories: [],
   }),
   methods: {
     async fetchRecords() {
-      const { records } = await kintoneUtility.rest.getAllRecordsByQuery({
+      let { records } = await kintoneUtility.rest.getAllRecordsByQuery({
         app: this.appId,
         query: kintone.app.getQueryCondition(),
       });
+
+      records = await Promise.all(
+        records.map((item) => {
+          item["タイトル"].value = item["タイトル"].value.slice(0, 15);
+          const mainText = item["本文"].value
+            .replace("<div>", "")
+            .replace(/<div>/g, "\n")
+            .replace(/<("[^"]*"|'[^']*'|[^'">])*>/g, "");
+          item["本文"].value = mainText.slice(0, 15);
+          return item;
+        })
+      );
+
       this.items = records;
       this.allItems = records;
       console.log("records", records);
@@ -160,19 +231,31 @@ export default {
           if (this.search.text) {
             isMatched = isMatched && 0 <= jsonValue.indexOf(this.search.text);
           }
-          if (0 < this.search.industry.length) {
-            isMatched =
-              isMatched && this.search.industry.includes(item["業種"].value);
-          }
-          if (this.search.clientName) {
+          if (0 < this.search.category.length) {
             isMatched =
               isMatched &&
-              0 <= item["クライアント名"].value.indexOf(this.search.clientName);
+              this.search.category.includes(item["カテゴリーから探す"].value);
           }
-          if (this.search.commodity) {
+          if (0 < this.search.broadCategory.length) {
             isMatched =
               isMatched &&
-              0 <= item["商材名"].value.indexOf(this.search.commodity);
+              this.search.broadCategory.includes(
+                item["大分類キーワード"].value
+              );
+          }
+          if (this.search.mediumCategory) {
+            isMatched =
+              isMatched &&
+              0 <=
+                item["中分類キーワード"].value.indexOf(
+                  this.search.mediumCategory
+                );
+          }
+          if (this.search.subCategory) {
+            isMatched =
+              isMatched &&
+              0 <=
+                item["小分類キーワード"].value.indexOf(this.search.subCategory);
           }
           return isMatched;
         });
@@ -180,15 +263,28 @@ export default {
       }, 500);
     },
     async buildSearchItems() {
-      this.industries = config.INDUSTRY;
+      const fields = await kintone.api(
+        kintone.api.url("/k/v1/app/form/fields", true),
+        "GET",
+        { app: this.appId }
+      );
+      console.log(fields);
+      this.categories = Object.keys(
+        fields.properties["カテゴリーから探す"].options
+      );
+      this.broadCategories = Object.keys(
+        fields.properties["大分類キーワード"].options
+      );
     },
   },
   created: function () {
     this.buildSearchItems();
     this.fetchRecords();
+    window.getElementById;
   },
 };
 </script>
+
 
 <style scoped>
 .v-data-table {
