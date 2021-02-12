@@ -83,7 +83,7 @@
             >
               <template v-slot:[`item.レコード番号.value`]="{ item }">
                 <a
-                  :href="`https://salescomms.cybozu.com/k/${appId}/show#record=${item.レコード番号.value}`"
+                  :href="`https://greendays.cybozu.com/k/${appId}/show#record=${item.レコード番号.value}`"
                   target="_blank"
                 >
                   {{ item.レコード番号.value }}
