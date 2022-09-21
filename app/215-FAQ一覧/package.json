@@ -36,6 +36,6 @@
     "babel-polyfill": "^6.26.0",
     "kintone-utility": "https://github.com/kintone/kintoneUtility.git",
     "vue": "^2.6.11",
-    "vuetify": "^2.2.32"
+    "vuetify": "^2.6.10"
   }
 }
